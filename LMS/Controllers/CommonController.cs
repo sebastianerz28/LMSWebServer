@@ -80,6 +80,8 @@ namespace LMS.Controllers
         public IActionResult GetCatalog()
         {
 
+
+
             return Json(null);
         }
 
@@ -117,8 +119,20 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
+            var query = from courses in db.Courses
+                        where courses.Dept == subject && num == courses.CourseNum
+                        join classes in db.Classes on courses.CourseId equals classes.CourseId into joinedCourseClass
+                        from courseClass in joinedCourseClass
+                        where courseClass.Season == season && courseClass.Year == year
+                        join assignmentCat in db.AssignmentCategories on courseClass.ClassId equals assignmentCat.ClassId into joinedClassesCat
+                        from classesCat in joinedClassesCat
+                        where category == classesCat.Name
+                        join assignments in db.Assignments on classesCat.CategoryId equals assignments.CategoryId into joinedCategoriesAssignments
+                        from assgn in joinedCategoriesAssignments
+                        where assgn.Name == asgname
+                        select assgn.Name;
 
-            return Content("");
+            return Content(query.First());
         }
 
 
@@ -127,7 +141,7 @@ namespace LMS.Controllers
         /// Use "return Content(...)" to return plain text.
         /// Returns the contents of an assignment submission.
         /// Returns the empty string ("") if there is no submission.
-        /// </summary>
+        /// </summary> 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
@@ -161,6 +175,39 @@ namespace LMS.Controllers
         /// </returns>
         public IActionResult GetUser(string uid)
         {
+            var checkStudents = from s in db.Students
+                                where s.UId == uid
+                                select new
+                                {
+                                    fname = s.FName,
+                                    lname = s.LName,
+                                    uid = s.UId,
+                                    department = s.Major
+                                };
+            if (checkStudents.Count() == 1)
+                return Json(checkStudents.ToArray());
+            var checkProfs = from p in db.Professors
+                             where p.UId == uid
+                             select new
+                             {
+                                 fname = p.FName,
+                                 lname = p.LName,
+                                 uid = p.UId,
+                                 department = p.Dept
+                             };
+            if (checkProfs.Count() == 1)
+                return Json(checkProfs.ToArray());
+
+            var checkAdmins = from a in db.Administrators
+                             where a.UId == uid
+                             select new
+                             {
+                                 fname = a.FName,
+                                 lname = a.LName,
+                                 uid = a.UId
+                             };
+            if (checkProfs.Count() == 1)
+                return Json(checkProfs.ToArray());
 
             return Json(new { success = false });
         }
