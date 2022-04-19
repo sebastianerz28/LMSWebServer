@@ -79,10 +79,14 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetCatalog()
         {
-
-
-
-            return Json(null);
+            var query = from d in db.Departments
+                        select new
+                        {
+                            subject = d.Subject,
+                            dname = d.Name,
+                            courses = d.Courses
+                        };
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -101,8 +105,22 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
         {
-
-            return Json(null);
+            var query = from courses in db.Courses
+                        where courses.Dept == subject && courses.CourseNum == number
+                        join classes in db.Classes on courses.CourseId equals classes.CourseId into joinedClassesCourses
+                        from f in joinedClassesCourses
+                        select new
+                        {
+                            season = f.Season,
+                            year = f.Year,
+                            location = f.Loc,
+                            start = f.Start,
+                            end = f.End,
+                            fname = f.Instructor.FName,
+                            lname = f.Instructor.LName
+                        };
+                        
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -130,9 +148,9 @@ namespace LMS.Controllers
                         join assignments in db.Assignments on classesCat.CategoryId equals assignments.CategoryId into joinedCategoriesAssignments
                         from assgn in joinedCategoriesAssignments
                         where assgn.Name == asgname
-                        select assgn.Name;
-
-            return Content(query.First());
+                        select assgn.Contents;
+            
+            return Content(query.First().ToString());
         }
 
 
@@ -185,7 +203,7 @@ namespace LMS.Controllers
                                     department = s.Major
                                 };
             if (checkStudents.Count() == 1)
-                return Json(checkStudents.ToArray());
+                return Json(checkStudents.First());
             var checkProfs = from p in db.Professors
                              where p.UId == uid
                              select new
@@ -196,7 +214,7 @@ namespace LMS.Controllers
                                  department = p.Dept
                              };
             if (checkProfs.Count() == 1)
-                return Json(checkProfs.ToArray());
+                return Json(checkProfs.First());
 
             var checkAdmins = from a in db.Administrators
                              where a.UId == uid
@@ -207,7 +225,7 @@ namespace LMS.Controllers
                                  uid = a.UId
                              };
             if (checkProfs.Count() == 1)
-                return Json(checkProfs.ToArray());
+                return Json(checkProfs.First());
 
             return Json(new { success = false });
         }
