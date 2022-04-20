@@ -119,7 +119,7 @@ namespace LMS.Controllers
                             fname = f.Instructor.FName,
                             lname = f.Instructor.LName
                         };
-                        
+
             return Json(query.ToArray());
         }
 
@@ -149,7 +149,7 @@ namespace LMS.Controllers
                         from assgn in joinedCategoriesAssignments
                         where assgn.Name == asgname
                         select assgn.Contents;
-            
+
             return Content(query.First().ToString());
         }
 
@@ -170,7 +170,24 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
+            var query = from courses in db.Courses
+                        where courses.Dept == subject && courses.CourseNum == num
+                        join classes in db.Classes on courses.CourseId equals classes.CourseId into joinedCourseClass
+                        from courseClass in joinedCourseClass
+                        where courseClass.Year == year && courseClass.Season == season
+                        join categories in db.AssignmentCategories on courseClass.ClassId equals categories.ClassId into joinedclassCat
+                        from classCat in joinedclassCat
+                        where classCat.Name == category
+                        join assignments in db.Assignments on classCat.CategoryId equals assignments.CategoryId into joinedCatAssign
+                        from catAssign in joinedCatAssign
+                        where catAssign.Name == asgname
+                        join submissions in db.Submissions on catAssign.AssignmentId equals submissions.AssignmentId into joinedSubAssign
+                        from subAssign in joinedSubAssign
+                        where subAssign.UId == uid
+                        select subAssign.Contents;
 
+            if (query.Count() > 0)
+                return Content(query.First());
             return Content("");
         }
 
@@ -217,13 +234,13 @@ namespace LMS.Controllers
                 return Json(checkProfs.First());
 
             var checkAdmins = from a in db.Administrators
-                             where a.UId == uid
-                             select new
-                             {
-                                 fname = a.FName,
-                                 lname = a.LName,
-                                 uid = a.UId
-                             };
+                              where a.UId == uid
+                              select new
+                              {
+                                  fname = a.FName,
+                                  lname = a.LName,
+                                  uid = a.UId
+                              };
             if (checkProfs.Count() == 1)
                 return Json(checkProfs.First());
 
