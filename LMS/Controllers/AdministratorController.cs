@@ -42,7 +42,7 @@ namespace LMS.Controllers
         {
             var query = from c in db.Courses
                         where c.Dept == subject
-                        select new { c.CourseNum, c.Dept };
+                        select new { number = c.CourseNum, name = c.Name };
             return Json(query.ToArray());
         }
 
@@ -63,7 +63,12 @@ namespace LMS.Controllers
         {
             var query = from p in db.Professors
                         where p.Dept == subject
-                        select new { lname = p.LName, fname = p.FName, uid = p.UId };
+                        select new
+                        {
+                            lname = p.LName,
+                            fname = p.FName,
+                            uid = p.UId
+                        };
             return Json(query.ToArray());
         }
 
