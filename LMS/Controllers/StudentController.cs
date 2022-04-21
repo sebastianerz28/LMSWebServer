@@ -67,8 +67,27 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
     {
-   
-      return Json(null);
+            // select Dept, courseNum, Courses.Name, Season, Year, Grade from
+            // Students natural join Enrolled natural join Classes natural join Courses
+            // where Students.uID="u0011011";
+            var query = from s in db.Students
+                        join e in db.Enrolled on s.UId equals e.UId into leftJoinEnrolled
+                        from x in leftJoinEnrolled.DefaultIfEmpty()
+                        join cl in db.Classes on x.ClassId equals cl.ClassId into leftJoinClasses
+                        from y in leftJoinClasses.DefaultIfEmpty()
+                        join co in db.Courses on y.CourseId equals co.CourseId into leftJoinCourses
+                        from z in leftJoinCourses.DefaultIfEmpty()
+                        select new
+                        {
+                            z.Dept,
+                            z.CourseNum,
+                            z.Name,
+                            y.Season,
+                            y.Year,
+                            x.Grade
+                        };
+
+            return Json(query.ToArray());
     }
 
     /// <summary>
@@ -87,7 +106,7 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
     {     
-
+      
       return Json(null);
     }
 
