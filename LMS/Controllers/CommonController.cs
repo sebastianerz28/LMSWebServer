@@ -84,7 +84,12 @@ namespace LMS.Controllers
                         {
                             subject = d.Subject,
                             dname = d.Name,
-                            courses = d.Courses
+                            courses = from cInfo in d.Courses
+                                      select new
+                                      {
+                                          number = cInfo.CourseNum,
+                                          cname = cInfo.Name
+                                      }
                         };
             return Json(query.ToArray());
         }
