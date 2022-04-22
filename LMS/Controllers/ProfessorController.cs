@@ -105,8 +105,33 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
     {
-      
-      return Json(null);
+            // Get's student's uid and grade based on parameters
+            // select uID, Grade from Courses natural join Classes natural join Enrolled
+            // where courseNum = <num> and Dept = "<subject>" and Season = "<season>" and Year = <year>;
+            var studentsUidGrade = from course in db.Courses
+                                   where course.CourseNum == num && course.Dept == subject
+                                   join cl in db.Classes on course.CourseId equals cl.CourseId into leftJoinClasses
+                                   from courseClass in leftJoinClasses
+                                   where courseClass.Season == season && courseClass.Year == year
+                                   join en in db.Enrolled on courseClass.ClassId equals en.ClassId
+                                   select new
+                                   {
+                                       uid = en.UId,
+                                       grade = en.Grade
+                                   };
+            var studentsInClass = from uidGrade in studentsUidGrade
+                                  join s in db.Students
+                                  on new { S = uidGrade.uid } equals new { S = s.UId }
+                                  select new
+                                  {
+                                      fname = s.FName,
+                                      lname = s.LName,
+                                      uid = s.UId,
+                                      dob = s.Dob,
+                                      grade = uidGrade.grade
+                                  };
+
+            return Json(studentsInClass);
     }
 
 
@@ -129,8 +154,43 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
     {
+            // gets the CategoryName and CategoryID:
 
-      return Json(null);
+            // select Assignments.Name as aname, c.catName as cname, DueDate as due
+            // from Assignments
+            // join (select CategoryID, AssignmentCategories.Name as catName
+            //          from Courses join Classes join AssignmentCategories
+            //          where Courses.courseID = Classes.courseID
+            //          and Classes.ClassID = AssignmentCategories.ClassID
+            //          and courseNum = 5530 and Dept = "CS"
+            //          and Season = "Spring" and Year = 2022) as c
+            //  where c.CategoryID = Assignments.CategoryID;
+
+            // this is for all assignments
+            var getclassIDCatID = from course in db.Courses
+                                  where course.CourseNum == num && course.Dept == subject
+                                  join classes in db.Classes on course.CourseId equals classes.CourseId into joinedCourseClass
+                                  from courseClass in joinedCourseClass
+                                  where courseClass.Season == season && courseClass.Year == year
+                                  join assignCat in db.AssignmentCategories on courseClass.ClassId equals assignCat.ClassId
+                                  select new
+                                  {
+                                      catName = assignCat.Name,
+                                      catID = assignCat.CategoryId
+                                  };
+            // then join with Assignments to get necessary info
+            var getAssigns = from catNameID in getclassIDCatID
+                             join a in db.Assignments
+                             on new { A = catNameID.catID } equals new { A = a.CategoryId }
+                             select new
+                             {
+                                 aname = a.Name,
+                                 cname = catNameID.catName,
+                                 due = a.DueDate,
+                                 submissions = a.Submissions.Count()
+                             };
+
+            return Json(getAssigns);
     }
 
 

@@ -182,10 +182,19 @@ namespace LMS.Controllers
             //      and courseNum = <num>
             //      and Dept = "<subject>")
             //  as c natural join Assignments;
+
+            //select AssignmentID from Assignments natural join
+            //  (select CategoryID from Courses join Classes join AssignmentCategories
+            //      where Courses.courseID=Classes.courseID
+            //      and Classes.ClassID=AssignmentCategories.ClassID
+            //      and courseNum=5530 and Dept="CS"
+            //      and Season="Spring" and Year=2022) as c;
+
             var query1 = from course in db.Courses
                          where course.CourseNum == num && course.Dept == subject
                          join classes in db.Classes on course.CourseId equals classes.CourseId into joinedCourseClass
                          from courseClass in joinedCourseClass
+                         where courseClass.Season == season && courseClass.Year == year
                          join assignCat in db.AssignmentCategories on courseClass.ClassId equals assignCat.ClassId
                          select new
                          {
