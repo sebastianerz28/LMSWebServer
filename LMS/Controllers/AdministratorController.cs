@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -85,9 +86,22 @@ namespace LMS.Controllers
         /// false if the Course already exists.</returns>
         public IActionResult CreateCourse(string subject, int number, string name)
         {
+            try
+            {
+                Courses c = new Courses();
+                c.CourseNum = (uint)number;
+                c.Dept = subject;
+                c.Name = name;
+                db.Courses.Add(c);
+                db.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception e)
+            {
+                return Json(new { success = false });
+            }
 
-
-            return Json(new { success = false });
+            
         }
 
 
@@ -109,8 +123,32 @@ namespace LMS.Controllers
         /// a Class offering of the same Course in the same Semester.</returns>
         public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
         {
-
-            return Json(new { success = false });
+            var query = from courses in db.Courses
+                        where courses.CourseNum == number && courses.Dept == subject
+                        select new { courseID = courses.CourseId };
+            if (query.Count() > 0)
+            {
+                try
+                {
+                    Classes c = new Classes();
+                    c.CourseId = query.First().courseID;
+                    c.Season = season;
+                    c.Year = (uint)year;
+                    c.Start = start.TimeOfDay;
+                    c.End = end.TimeOfDay;
+                    c.Loc = location;
+                    c.InstructorId = instructor;
+                    db.Add(c);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch (Exception e)
+                {
+                    return Json(new { success = false });
+                }
+            }
+            else
+                return Json(new { success = false });
         }
 
 
